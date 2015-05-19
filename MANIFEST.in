@@ -1,0 +1,2 @@
+recursive-include synpla_nvd3/static *
+include README.rst
