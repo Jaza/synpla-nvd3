@@ -81,7 +81,53 @@
       nv.utils.windowResize(chart.update);
 
       return chart;
-    }
+    };
+
+    var pieChart = function(data, metricTitle, graphElement, graphColours) {
+      var extraHeight = 0;
+
+      var width = parseInt($(graphElement).css('width').replace('px', '')),
+          margin = {top: 0, right: 20, bottom: 20, left: 30},
+          height = width > 500 ? (navigator.userAgent.indexOf('PhantomJS') !== -1 ? (300 + extraHeight) : (500 + extraHeight)) : width * 1.1;
+
+      if (navigator.userAgent.indexOf('PhantomJS') !== -1) {
+        width *= 0.7;
+      }
+
+      var chart = nv.models.pieChart()
+          .x(function(d) {
+            return d.title;
+          })
+          .y(function(d) {
+            return d.value;
+          })
+          .margin(margin)
+          .height(height)
+          .width(width)
+          .valueFormat(d3.format(','))
+          .showLabels(true)
+          .labelType('value')
+          .labelThreshold(0)
+          .showLegend(true)
+          .donut(true)
+          .donutRatio(0.3);
+
+      if (graphColours) {
+        chart.color(graphColours);
+      }
+
+      var svg = d3.select(graphElement).append("svg");
+
+      svg.datum(data.filtered)
+          .transition()
+          .duration(500)
+          .call(chart)
+          .style({'height': height + 'px', 'width': width + 'px'});
+
+      nv.utils.windowResize(chart.update);
+
+      return chart;
+    };
 
     var draw = function(data, graphWrapperElement, metricTitle, displayMode) {
       $(graphWrapperElement).append('<section class="graph"></section>');
@@ -95,6 +141,12 @@
         case 'bar-chart-non-time-series':
           nv.addGraph(function() {
             barChartNonTimeSeries(data, metricTitle, graphElement, graphColours);
+          });
+          return;
+
+        case 'pie-chart':
+          nv.addGraph(function() {
+            pieChart(data, metricTitle, graphElement, graphColours);
           });
           return;
       }
