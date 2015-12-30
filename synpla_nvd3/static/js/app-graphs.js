@@ -30,8 +30,11 @@
       chart.yAxis.tickFormat(d3.format(','));
 
       chart.tooltips(true)
-           .stacked(true)
            .duration(350);
+
+      if (typeof data.isGrouped === 'undefined') {
+        chart.stacked(true);
+      }
 
       if (graphColours) {
         chart.color(graphColours);
