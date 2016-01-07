@@ -86,6 +86,134 @@
       return chart;
     };
 
+    var linePlusBarChart = function(data, metricTitle, graphElement, graphColours) {
+      var chart = nv.models.discreteBarChart();
+
+      var margin = {top: 30, right: 70, bottom: 100, left: 70},
+          height = ($(window).height() - 500) > 500 ? ($(window).height() - 500) : 500,
+          width = parseInt($(graphElement).css('width').replace('px', ''));
+
+      if (navigator.userAgent.indexOf('PhantomJS') !== -1) {
+        width *= $(graphElement).parent().parent().hasClass('col-sm-12') ? 1.5 : 0.7;
+      }
+
+      chart.margin(margin)
+           .height(height)
+           .width(width);
+
+      chart.x(function(d,i) { return d[0] })
+           .y(function(d,i) { return d[1] });
+
+      chart.color(['steelblue']);
+
+      //chart.xAxis.axisLabel("Completed Activities");
+      //chart.xAxis.rotateLabels(-10);
+
+      chart.yAxis
+          .tickFormat(d3.format(',f'))
+          .axisLabel("Change Per Activity");
+
+      var svg = d3.select(graphElement).append("svg");
+
+      svg.datum([data[0]])
+         .transition()
+         .duration(0)
+         .call(chart)
+         .style({'height': height + 'px', 'width': width + 'px'});
+
+      svg.select('.nv-y.nv-axis').select('.nv-wrap').select('g')
+        .append('rect')
+        .attr('width', 10)
+        .attr('height', 10)
+        .attr('x', -60)
+        .attr('y', (height-margin.top-margin.bottom)/2 + 60)
+        .attr('stroke', 'steelblue')
+        .attr('fill', 'steelblue');
+
+      /** line chart **/
+
+      var x = d3.scale.ordinal()
+          .rangeBands([0, width-margin.right-margin.left], .1);
+
+      var y = d3.scale.linear()
+          .range([height - margin.bottom - margin.top, 0]);
+
+      var yAxis = d3.svg.axis()
+          .scale(y)
+          .orient("right")
+          .ticks(5);
+
+      var line = d3.svg.line()
+          .x(function(d) { return x(d[0]) + x.rangeBand() / 2; })
+          .y(function(d) { return y(d[1]); });
+
+      x.domain(data[1].values.map(function(d){return d[0]; }));
+      y.domain([0, d3.max(data[1].values, function(d) { return d[1]; })]);
+
+      var linechart = svg.append('g')
+         .attr('class','custom-line-wrap')
+         .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+
+      linechart.append("g")
+        .attr("class", "y axis")
+        .attr("transform", "translate(" + (width - margin.left - margin.right) + " ,0)")
+        .call(yAxis)
+      .append("text")
+        .attr("transform", "rotate(90)")
+        .attr("x", (height-margin.top-margin.bottom)/2)
+        .attr("y", -30)
+        .style("text-anchor", "middle")
+        .style("font-size", "12px")
+        .text("Cumulative Charge");
+
+      svg.select('.custom-line-wrap').select('.y.axis')
+        .append('circle')
+        .attr('r', 3)
+        .attr('cx', 32)
+        .attr('cy', (height-margin.top-margin.bottom)/2 - 60)
+        .attr('stroke', 'red')
+        .attr('fill', 'red');
+
+      var tooltip = nv.models.tooltip();
+      //tooltip.duration(0);
+
+      linechart.selectAll('.dot')
+        .data(data[1].values)
+        .enter().append('circle')
+          .attr("class", 'dot')
+          .attr('cx', function(d) { return x(d[0]) + x.rangeBand() / 2;  })
+          .attr('cy', function(d) { return y(d[1]); })
+          .attr('stroke', 'red')
+          .attr('fill', 'red')
+          .attr('r', 3);/*
+          .on('mouseover', function(d,i) {
+            var data = {series: {
+                key: 'Cumulative Charge',
+                value: d[1],
+                color: "red"
+            }};
+            tooltip.data(data).hidden(false);
+          })
+          .on('mouseout', function(d,i) {
+              tooltip.hidden(true);
+          })
+          .on('mousemove', function(d,i) {
+              tooltip.position({top: d3.event.pageY, left: d3.event.pageX})();
+          });*/
+
+      linechart.append("path")
+        .datum(data[1].values)
+        .attr("class", "line")
+        .attr("d", line)
+        .style('stroke', 'red')
+        .style('stroke-width', '1.5px');
+
+      nv.utils.windowResize(chart.update);
+
+      return chart;
+
+    };
+
     var pieChart = function(data, metricTitle, graphElement, graphColours) {
       var extraHeight = 0;
 
@@ -144,6 +272,12 @@
         case 'bar-chart-non-time-series':
           nv.addGraph(function() {
             barChartNonTimeSeries(data, metricTitle, graphElement, graphColours);
+          });
+          return;
+
+        case 'line-plus-bar-chart':
+          nv.addGraph(function() {
+            linePlusBarChart(data, metricTitle, graphElement, graphColours);
           });
           return;
 
