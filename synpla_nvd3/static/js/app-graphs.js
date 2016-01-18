@@ -89,7 +89,7 @@
     var linePlusBarChart = function(data, metricTitle, graphElement, graphColours) {
       var chart = nv.models.discreteBarChart();
 
-      var margin = {top: 30, right: 70, bottom: 100, left: 70},
+      var margin = {top: 30, right: 70, bottom: 150, left: 70},
           height = ($(window).height() - 500) > 500 ? ($(window).height() - 500) : 500,
           width = parseInt($(graphElement).css('width').replace('px', ''));
 
@@ -97,17 +97,24 @@
         width *= $(graphElement).parent().parent().hasClass('col-sm-12') ? 1.5 : 0.7;
       }
 
+      var xdomain = {};
+      data[0].values.forEach(function(d) {
+        xdomain[d[1]] = d[0];
+      });
+
       chart.margin(margin)
            .height(height)
            .width(width);
 
-      chart.x(function(d,i) { return d[0] })
-           .y(function(d,i) { return d[1] });
+      chart.x(function(d,i) { return d[1] })
+           .y(function(d,i) { return d[2] });
 
       chart.color(['steelblue']);
 
-      //chart.xAxis.axisLabel("Completed Activities");
-      //chart.xAxis.rotateLabels(-10);
+      chart.xAxis
+          .tickFormat(function(d){ return xdomain[d]; })
+          .rotateLabels(-45)
+          .axisLabel("Completed Activities");
 
       chart.yAxis
           .tickFormat(d3.format(',f'))
@@ -130,83 +137,91 @@
         .attr('stroke', 'steelblue')
         .attr('fill', 'steelblue');
 
+      svg.select('.nv-x.nv-axis').select('.nv-wrap').select('text.nv-axislabel').attr('x', function(d){
+        return (width-margin.left-margin.right) / 2;
+      });
+
       /** line chart **/
+      if (data[0].values.length > 1) {
 
-      var x = d3.scale.ordinal()
-          .rangeBands([0, width-margin.right-margin.left], .1);
+          var x = d3.scale.ordinal()
+              .rangeBands([0, width-margin.right-margin.left], .1);
 
-      var y = d3.scale.linear()
-          .range([height - margin.bottom - margin.top, 0]);
+          var y = d3.scale.linear()
+              .range([height - margin.bottom - margin.top, 0]);
 
-      var yAxis = d3.svg.axis()
-          .scale(y)
-          .orient("right")
-          .ticks(5);
+          var yAxis = d3.svg.axis()
+              .scale(y)
+              .orient("right")
+              .ticks(5);
 
-      var line = d3.svg.line()
-          .x(function(d) { return x(d[0]) + x.rangeBand() / 2; })
-          .y(function(d) { return y(d[1]); });
+          var line = d3.svg.line()
+              .x(function(d) { return x(d[1]) + x.rangeBand() / 2; })
+              .y(function(d) { return y(d[2]); });
 
-      x.domain(data[1].values.map(function(d){return d[0]; }));
-      y.domain([0, d3.max(data[1].values, function(d) { return d[1]; })]);
+          x.domain(data[1].values.map(function(d){return d[1]; }));
+          y.domain([0, d3.max(data[1].values, function(d) { return d[2]; })]);
 
-      var linechart = svg.append('g')
-         .attr('class','custom-line-wrap')
-         .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+          var linechart = svg.append('g')
+             .attr('class','custom-line-wrap')
+             .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
 
-      linechart.append("g")
-        .attr("class", "y axis")
-        .attr("transform", "translate(" + (width - margin.left - margin.right) + " ,0)")
-        .call(yAxis)
-      .append("text")
-        .attr("transform", "rotate(90)")
-        .attr("x", (height-margin.top-margin.bottom)/2)
-        .attr("y", -30)
-        .style("text-anchor", "middle")
-        .style("font-size", "12px")
-        .text("Cumulative Charge");
+          linechart.append("g")
+            .attr("class", "y axis")
+            .attr("transform", "translate(" + (width - margin.left - margin.right) + " ,0)")
+            .call(yAxis)
+          .append("text")
+            .attr("transform", "rotate(90)")
+            .attr("x", (height-margin.top-margin.bottom)/2)
+            .attr("y", -50)
+            .style("text-anchor", "middle")
+            .style("font-size", "12px")
+            .text("Cumulative Change");
 
-      svg.select('.custom-line-wrap').select('.y.axis')
-        .append('circle')
-        .attr('r', 3)
-        .attr('cx', 32)
-        .attr('cy', (height-margin.top-margin.bottom)/2 - 60)
-        .attr('stroke', 'red')
-        .attr('fill', 'red');
+          svg.select('.custom-line-wrap').select('.y.axis')
+            .append('circle')
+            .attr('r', 3)
+            .attr('cx', 52)
+            .attr('cy', (height-margin.top-margin.bottom)/2 - 60)
+            .attr('stroke', 'red')
+            .attr('fill', 'red');
 
-      var tooltip = nv.models.tooltip();
-      //tooltip.duration(0);
+          var tooltip = nv.models.tooltip();
+          //tooltip.duration(0);
 
-      linechart.selectAll('.dot')
-        .data(data[1].values)
-        .enter().append('circle')
-          .attr("class", 'dot')
-          .attr('cx', function(d) { return x(d[0]) + x.rangeBand() / 2;  })
-          .attr('cy', function(d) { return y(d[1]); })
-          .attr('stroke', 'red')
-          .attr('fill', 'red')
-          .attr('r', 3);/*
-          .on('mouseover', function(d,i) {
-            var data = {series: {
-                key: 'Cumulative Charge',
-                value: d[1],
-                color: "red"
-            }};
-            tooltip.data(data).hidden(false);
-          })
-          .on('mouseout', function(d,i) {
-              tooltip.hidden(true);
-          })
-          .on('mousemove', function(d,i) {
-              tooltip.position({top: d3.event.pageY, left: d3.event.pageX})();
-          });*/
+          linechart.selectAll('.dot')
+            .data(data[1].values)
+            .enter().append('circle')
+              .attr("class", 'dot')
+              .attr('cx', function(d) { return x(d[1]) + x.rangeBand() / 2;  })
+              .attr('cy', function(d) { return y(d[2]); })
+              .attr('stroke', 'red')
+              .attr('fill', 'red')
+              .attr('r', 3);/*
+              .on('mouseover', function(d,i) {
+                var data = {series: {
+                    key: 'Cumulative Charge',
+                    value: d[1],
+                    color: "red"
+                }};
+                tooltip.data(data).hidden(false);
+              })
+              .on('mouseout', function(d,i) {
+                  tooltip.hidden(true);
+              })
+              .on('mousemove', function(d,i) {
+                  tooltip.position({top: d3.event.pageY, left: d3.event.pageX})();
+              });*/
 
-      linechart.append("path")
-        .datum(data[1].values)
-        .attr("class", "line")
-        .attr("d", line)
-        .style('stroke', 'red')
-        .style('stroke-width', '1.5px');
+          linechart.append("path")
+            .datum(data[1].values)
+            .attr("class", "line")
+            .attr("d", line)
+            .style('fill', 'none')
+            .style('stroke', 'red')
+            .style('stroke-width', '1.5px');
+
+      }
 
       nv.utils.windowResize(chart.update);
 
