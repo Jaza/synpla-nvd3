@@ -114,11 +114,11 @@
       chart.xAxis
           .tickFormat(function(d){ return xdomain[d]; })
           .rotateLabels(-45)
-          .axisLabel("Completed Activities");
+          .axisLabel("Completed Iterations");
 
       chart.yAxis
           .tickFormat(d3.format(',f'))
-          .axisLabel("Change Per Activity");
+          .axisLabel("Change Per Iteration");
 
       var svg = d3.select(graphElement).append("svg");
 
