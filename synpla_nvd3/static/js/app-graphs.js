@@ -117,7 +117,7 @@
           .axisLabel("Completed Iterations");
 
       chart.yAxis
-          .tickFormat(d3.format(',f'))
+          .tickFormat(d3.format(','))
           .axisLabel("Change Per Iteration");
 
       var svg = d3.select(graphElement).append("svg");
